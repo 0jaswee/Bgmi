@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#070a12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HUD Calibrator">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Pro Gamer HUD Touch & Joystick Calibrator</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #070a12;
+      font-family: 'Inter', sans-serif;
+      color: #f8fafc;
+      touch-action: none;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    input[type=range] {
+      accent-color: #10b981;
+    }
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(71, 85, 105, 0.7);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="relative w-full h-full select-none overflow-hidden bg-[#070a12]">
+
+  <!-- Main Interactive Canvas for Full-Screen Touch, Joystick & Overlay Comparison -->
+  <canvas id="touchCanvas" class="absolute inset-0 w-full h-full z-10 cursor-crosshair"></canvas>
+
+  <!-- Hidden File Inputs for Game Control Layout & Previous Touch Screenshot Uploads -->
+  <input id="gameHudInput" type="file" accept="image/*" class="hidden">
+  <input id="touchShotInput" type="file" accept="image/*" class="hidden">
+
+  <!-- ========================================================================= -->
+  <!-- 1. FULL-SCREEN DASHBOARD (Settings, Mode Selector, Overlay Studio, PWA)   -->
+  <!-- ========================================================================= -->
+  <div id="centerHud" class="absolute inset-0 z-20 flex items-center justify-center p-3 sm:p-5 pointer-events-none">
+
+    <!-- IDLE / FULL-SCREEN DASHBOARD VIEW -->
+    <div id="hudIdle" class="pointer-events-auto bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden">
+      <!-- Top Header Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-slate-950/80 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-sm">
+            ⊕
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-sm sm:text-base font-bold text-white tracking-tight">HUD Touch & Joystick Calibrator</h1>
+              <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">PWA Ready</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Button size % calculator, joystick drag mapper & HUD transparency studio</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="downloadHtmlSourceBtn" type="button" title="Download this complete single-file HTML code for GitHub Pages" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>
+            <span>Download HTML</span>
+          </button>
+          <button id="installAppBtn" type="button" class="px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-semibold transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 12l-3.5-3.5M12 16l3.5-3.5M4 20h16"/></svg>
+            <span id="installAppBtnText">Install on Phone</span>
+          </button>
+          <button id="fullscreenBtn" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+            <span id="fullscreenBtnText">Fullscreen</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard Body Grid -->
+      <div class="p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-4">
+
+        <!-- Left Column: Test Mode, Settings & Launch (7 cols) -->
+        <div class="md:col-span-7 flex flex-col justify-between space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800/90">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">1. Calibration Mode & Settings</span>
+              <span class="text-[11px] text-slate-400">Tap any dot after test to inspect</span>
+            </div>
+
+            <!-- Test Mode Selector: Buttons Only | Split (Left Joystick + Right Buttons) | Joystick Only -->
+            <div>
+              <div class="flex justify-between text-xs mb-1.5">
+                <span class="text-slate-300 font-medium">Test Mode</span>
+                <span id="modeHintLabel" class="text-[11px] text-emerald-400 font-medium">Left side = Joystick Drag • Right = Button Taps</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" data-mode="SPLIT" class="mode-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-emerald-500 bg-emerald-500/20 text-emerald-300 transition">
+                  Split (Joy + Taps)
+                </button>
+                <button type="button" data-mode="BUTTONS" class="mode-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-slate-500 transition">
+                  Button Taps Only
+                </button>
+                <button type="button" data-mode="JOYSTICK" class="mode-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-slate-500 transition">
+                  Joystick Drag Only
+                </button>
+              </div>
+            </div>
+
+            <!-- Timer Selector -->
+            <div>
+              <div class="flex justify-between text-xs mb-1.5">
+                <span class="text-slate-300 font-medium">Test Duration</span>
+                <span id="durationLabel" class="mono text-emerald-400 font-semibold">15s</span>
+              </div>
+              <div class="grid grid-cols-4 gap-1.5">
+                <button type="button" data-dur="10" class="dur-btn py-1.5 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-slate-500 transition">10s</button>
+                <button type="button" data-dur="15" class="dur-btn py-1.5 text-xs font-semibold rounded-lg border border-emerald-500 bg-emerald-500/20 text-emerald-300 transition">15s</button>
+                <button type="button" data-dur="30" class="dur-btn py-1.5 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-slate-500 transition">30s</button>
+                <button type="button" data-dur="0" class="dur-btn py-1.5 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-slate-500 transition">No Limit</button>
+              </div>
+            </div>
+
+            <!-- Cluster Merge Radius -->
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300 font-medium">Same-Spot Merge Radius</span>
+                <span id="radiusLabel" class="mono text-cyan-400 font-semibold">38 px</span>
+              </div>
+              <input id="radiusSlider" type="range" min="18" max="75" value="38" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+              <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+                <span>Strict (Small button)</span>
+                <span>Wide (Large thumb pad)</span>
+              </div>
+            </div>
+
+            <!-- Toggles -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <label for="soundToggle" class="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800 cursor-pointer">
+                <span class="text-xs text-slate-300 font-medium">Tap Beep Sound</span>
+                <input id="soundToggle" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+              </label>
+              <label for="gridToggle" class="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800 cursor-pointer">
+                <span class="text-xs text-slate-300 font-medium">Subtle Grid Lines</span>
+                <input id="gridToggle" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+              </label>
+            </div>
+          </div>
+
+          <div class="pt-2 flex flex-col gap-2">
+            <button id="startBtn" type="button" class="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z"/></svg>
+              Start Minimalist Blank Touch Test
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Game Control Layout & Touch Screenshot Overlay Studio (5 cols) -->
+        <div class="md:col-span-5 flex flex-col justify-between space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800/90">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">2. HUD Layout Overlay Studio</span>
+              <span id="lastSavedBadge" class="text-[10px] mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">No session yet</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              Upload your in-game control layout screenshot and layer your recorded touch dots + joystick ring on top with transparency. Collapses into a draggable floating icon!
+            </p>
+
+            <!-- Upload Game Control Screenshot -->
+            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-xs font-semibold text-white truncate">Game Control Layout (Base)</div>
+                <div id="gameHudStatus" class="text-[10px] text-slate-400 truncate">Upload your in-game HUD screenshot</div>
+              </div>
+              <button id="uploadGameHudBtn" type="button" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold transition">
+                Upload HUD
+              </button>
+            </div>
+
+            <!-- Upload Previous Touch Screenshot (or use live recorded touches) -->
+            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-xs font-semibold text-white truncate">Touch Screenshot (Overlay)</div>
+                <div id="touchShotStatus" class="text-[10px] text-slate-400 truncate">Uses live taps + optional saved screenshot</div>
+              </div>
+              <button id="uploadTouchShotBtn" type="button" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-semibold transition">
+                Upload Shot
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-1 flex flex-col gap-2">
+            <button id="openCompareStudioBtn" type="button" class="w-full py-2.5 px-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/15 transition flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              Open Fullscreen Overlay Comparison
+            </button>
+            <button id="viewLastReportBtn" type="button" class="hidden w-full py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
+              View Last Session Data Report
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. MINIMALIST RUNNING STATE: Tiny Center Cut (✕) Button Only              -->
+    <!-- ========================================================================= -->
+    <div id="hudRunning" class="hidden pointer-events-auto flex-col items-center justify-center">
+      <button id="stopCenterBtn" type="button" title="Cut / Stop Test" class="w-10 h-10 rounded-full bg-slate-900/75 hover:bg-rose-600/90 active:scale-90 border border-slate-600/70 text-slate-200 hover:text-white shadow-lg flex flex-col items-center justify-center transition">
+        <span class="text-xs font-bold leading-none">✕</span>
+        <span id="timerDisplay" class="mono text-[8px] text-emerald-400 leading-none mt-0.5">15s</span>
+      </button>
+      <span id="liveTapCount" class="hidden">0</span>
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3A. POST-TEST SCREENSHOT FREEZE BANNER (Collapses to Floating Icon!)      -->
+  <!-- ========================================================================= -->
+  <div id="screenshotHoldBar" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto">
+    <div id="holdCardExpanded" class="bg-slate-900/95 backdrop-blur-md border border-emerald-500/60 rounded-2xl px-4 py-3.5 shadow-2xl flex flex-col items-center gap-2 text-center max-w-xs">
+      <div class="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-bold">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        Test Finished • Tap Any Dot to Inspect!
+      </div>
+      <p class="text-[11px] text-slate-300 leading-snug">
+        Tap any numbered dot or joystick ring to see its exact <strong>Button Size %</strong> and coordinates, or minimize this box into a floating icon to take a screenshot.
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-1.5 w-full pt-1">
+        <button id="saveTouchPngBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>
+          Save Image
+        </button>
+        <button id="uploadHudFromHoldBtn" type="button" class="px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-semibold text-xs transition">
+          Overlay on Game HUD
+        </button>
+        <button id="hideHoldUiBtn" type="button" title="Collapse into floating icon permanently until you tap the icon" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-[11px] font-semibold transition">
+          Minimize to Floating Icon
+        </button>
+        <button id="closeHoldToDashboardBtn" type="button" class="px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-semibold transition">
+          ✕ Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3B. INTERACTIVE DOT / JOYSTICK INSPECTOR CARD (When user taps a spot)     -->
+  <!-- ========================================================================= -->
+  <div id="clusterInspectorCard" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur-xl border border-emerald-500/60 rounded-2xl p-3.5 shadow-2xl w-[92vw] max-w-md pointer-events-auto">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+      <div class="flex items-center gap-2">
+        <span id="inspBadge" class="mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">#1 Spot</span>
+        <span id="inspTitle" class="text-xs font-bold text-white">Button Zone Inspector</span>
+      </div>
+      <button id="closeInspectorBtn" type="button" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center justify-center">✕</button>
+    </div>
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800">
+        <div class="text-[10px] text-slate-400">Position (X, Y)</div>
+        <div id="inspCoords" class="mono text-xs font-bold text-white mt-0.5">--%, --%</div>
+      </div>
+      <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800">
+        <div id="inspSizeLabel" class="text-[10px] text-slate-400">Button Diameter</div>
+        <div id="inspDiameter" class="mono text-xs font-bold text-cyan-300 mt-0.5">-- px</div>
+      </div>
+      <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800">
+        <div id="inspScaleLabel" class="text-[10px] text-slate-400">In-Game Scale %</div>
+        <div id="inspScalePct" class="mono text-xs font-bold text-emerald-400 mt-0.5">--%</div>
+      </div>
+    </div>
+    <p id="inspEdgeNote" class="text-[11px] text-slate-300 mt-2 leading-snug"></p>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 4A. DRAGGABLE FLOATING ICON (Works in BOTH Post-Test & Overlay Modes!)    -->
+  <!-- ========================================================================= -->
+  <button id="floatingCompareFab" type="button" title="Tap to open menu • Drag to move anywhere" style="top: 14px; left: 50%; transform: translateX(-50%);" class="hidden fixed z-40 pointer-events-auto w-11 h-11 rounded-full bg-slate-900/90 hover:bg-slate-800 border-2 border-cyan-400/90 text-cyan-300 shadow-2xl shadow-cyan-500/30 flex items-center justify-center transition active:scale-95">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+    </svg>
+    <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-950"></span>
+  </button>
+
+  <!-- ========================================================================= -->
+  <!-- 4B. EXPANDED OVERLAY OPTIONS DRAWER (Opens when Floating Icon is tapped)  -->
+  <!-- ========================================================================= -->
+  <div id="compareToolbar" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur-xl border border-slate-700/90 rounded-2xl p-4 shadow-2xl w-[94vw] max-w-lg pointer-events-auto">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span class="text-xs font-bold text-white">Overlay Controls & Transparency</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button id="collapseToFabBtn" type="button" title="Minimize back to floating icon so you can see 100% of your game controls" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 text-[11px] font-bold transition flex items-center gap-1">
+          <span>✕ Hide Panel</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Upload & Quick Actions Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-3">
+      <button id="compareUploadHudBtn" type="button" class="py-1.5 px-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[11px] font-semibold transition truncate">
+        + Game HUD
+      </button>
+      <button id="compareUploadTouchBtn" type="button" class="py-1.5 px-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-[11px] font-semibold transition truncate">
+        + Touch Shot
+      </button>
+      <button id="fitModeBtn" type="button" class="py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold transition truncate">
+        Fit: Stretch
+      </button>
+      <button id="saveMergedPngBtn" type="button" class="py-1.5 px-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[11px] font-bold transition truncate">
+        Save Combined
+      </button>
+    </div>
+
+    <!-- Opacity Sliders -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+      <div>
+        <div class="flex justify-between text-[11px] mb-1">
+          <span class="text-slate-300 font-medium">Game HUD Opacity</span>
+          <span id="hudOpacityVal" class="mono text-cyan-400 font-bold">85%</span>
+        </div>
+        <input id="hudOpacitySlider" type="range" min="10" max="100" value="85" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+      </div>
+
+      <div>
+        <div class="flex justify-between text-[11px] mb-1">
+          <span class="text-slate-300 font-medium">Touch Layer Opacity</span>
+          <span id="touchOpacityVal" class="mono text-emerald-400 font-bold">85%</span>
+        </div>
+        <input id="touchOpacitySlider" type="range" min="10" max="100" value="85" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+      </div>
+    </div>
+
+    <!-- Extra Pro Controls: Draggable Ghost Target + Live Dots + Back to Dashboard -->
+    <div class="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-800 text-[11px]">
+      <div class="flex items-center gap-3">
+        <label for="showLiveDotsOnCompare" class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+          <input id="showLiveDotsOnCompare" type="checkbox" checked class="w-3.5 h-3.5 accent-emerald-500 rounded">
+          Live Dots & Joy
+        </label>
+        <label for="showGhostBtnToggle" class="flex items-center gap-1.5 text-amber-300 cursor-pointer" title="Shows a draggable virtual button ring at your #1 spot to test size & alignment">
+          <input id="showGhostBtnToggle" type="checkbox" checked class="w-3.5 h-3.5 accent-amber-500 rounded">
+          Draggable Target Ring
+        </label>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button id="openReportFromCompareBtn" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition">
+          Stats Report
+        </button>
+        <button id="exitCompareBtn" type="button" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-semibold transition">
+          Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 5. DETAILED STATS, BUTTON SIZE % & JOYSTICK REPORT MODAL                  -->
+  <!-- ========================================================================= -->
+  <div id="resultsPanel" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-slate-900/95 backdrop-blur-lg border border-slate-700/90 rounded-2xl p-5 shadow-2xl w-[420px] max-w-[94vw] max-h-[90vh] overflow-y-auto pointer-events-auto">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div>
+        <span class="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Calibration Report</span>
+        <h2 class="text-base font-bold text-white">Button Size % & Joystick Analysis</h2>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="totalTapsBadge" class="mono text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-200 border border-slate-700 font-semibold">0 Taps</span>
+        <button id="closeReportModalBtn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold">✕</button>
+      </div>
+    </div>
+
+    <!-- Primary Winner Button Callout -->
+    <div id="winnerCard" class="mt-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/40">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          #1 Most Tapped Button Zone
+        </span>
+        <span id="winnerHits" class="mono text-xs font-bold text-emerald-400">0 hits (0%)</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 mt-2.5 text-center">
+        <div class="bg-slate-950/70 p-2 rounded-lg border border-slate-800">
+          <div class="text-[10px] text-slate-400">Screen X / Y</div>
+          <div id="winnerCoords" class="mono text-xs font-bold text-white mt-0.5">--%, --%</div>
+        </div>
+        <div class="bg-slate-950/70 p-2 rounded-lg border border-slate-800">
+          <div class="text-[10px] text-slate-400">Pixel Center</div>
+          <div id="winnerPixels" class="mono text-xs font-bold text-white mt-0.5">-- px</div>
+        </div>
+        <div class="bg-slate-950/70 p-2 rounded-lg border border-slate-800">
+          <div class="text-[10px] text-slate-400">Size / Scale %</div>
+          <div id="winnerSpread" class="mono text-xs font-bold text-cyan-300 mt-0.5">-- px (--%)</div>
+        </div>
+      </div>
+      <p id="winnerEdgeHint" class="text-[11px] text-slate-300 mt-2 leading-snug"></p>
+    </div>
+
+    <!-- Joystick Movement Analysis Card -->
+    <div id="joystickReportCard" class="mt-3 p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/40">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+          Joystick Movement Calibration
+        </span>
+        <span id="joyCountBadge" class="mono text-xs font-bold text-cyan-400">0 drags</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 mt-2.5 text-center">
+        <div class="bg-slate-950/70 p-2 rounded-lg border border-slate-800">
+          <div class="text-[10px] text-slate-400">Anchor Center</div>
+          <div id="joyCenterCoords" class="mono text-xs font-bold text-white mt-0.5">--%, --%</div>
+        </div>
+        <div class="bg-slate-950/70 p-2 rounded-lg border border-slate-800">
+          <div class="text-[10px] text-slate-400">Joy Size / Scale</div>
+          <div id="joyDiameterVal" class="mono text-xs font-bold text-cyan-300 mt-0.5">-- px (--%)</div>
+        </div>
+        <div class="bg-slate-950/70 p-2 rounded-lg border border-slate-800">
+          <div class="text-[10px] text-slate-400">Sprint Reach</div>
+          <div id="joySprintVal" class="mono text-xs font-bold text-amber-300 mt-0.5">-- px</div>
+        </div>
+      </div>
+      <p id="joyHintText" class="text-[11px] text-slate-300 mt-2 leading-snug">
+        Drag your thumb on the left side during Split or Joystick mode to measure your natural thumb anchor, joystick diameter, and sprint threshold.
+      </p>
+    </div>
+
+    <!-- Top Clusters List -->
+    <div class="mt-3">
+      <div class="flex items-center justify-between text-xs font-semibold text-slate-300 mb-1.5">
+        <span>Top Button Clusters (With In-Game Scale %)</span>
+        <span class="text-[10px] text-slate-400">Tap any row or dot to inspect</span>
+      </div>
+      <div id="topClustersList" class="space-y-1.5 text-xs"></div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-4 grid grid-cols-2 gap-2">
+      <button id="keepTestingBtn" type="button" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition">
+        Keep Tapping (+Add)
+      </button>
+      <button id="exportJsonBtn" type="button" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-xs border border-slate-700 transition">
+        Copy HUD Data
+      </button>
+      <button id="newSessionBtn" type="button" class="col-span-2 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition">
+        Return to Main Dashboard
+      </button>
+    </div>
+    <div id="copyToast" class="hidden mt-2 text-center text-[11px] text-emerald-400 font-medium">Copied HUD calibration coordinates to clipboard!</div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 6. INSTALL ON PHONE (PWA) INSTRUCTIONS MODAL                              -->
+  <!-- ========================================================================= -->
+  <div id="installGuideModal" class="hidden absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+        <h3 class="text-sm font-bold text-white">Install as Full-Screen Phone App</h3>
+        <button id="closeInstallModalBtn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        When hosted on GitHub Pages, this web app includes a built-in <strong>PWA Manifest</strong> so it installs directly onto your home screen and launches in true 100% full screen without browser bars:
+      </p>
+      <div class="space-y-2 text-xs">
+        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+          <div class="font-bold text-emerald-400 mb-0.5">Android (Chrome / Edge / Brave)</div>
+          <p class="text-slate-300">Tap the browser menu <strong>(⋮)</strong> in the top-right corner and select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</p>
+        </div>
+        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+          <div class="font-bold text-cyan-400 mb-0.5">iPhone / iPad (Safari)</div>
+          <p class="text-slate-300">Tap the <strong>Share</strong> button at the bottom of Safari, scroll down, and tap <strong>"Add to Home Screen"</strong>.</p>
+        </div>
+      </div>
+      <button id="gotItInstallBtn" type="button" class="w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
+        Got It
+      </button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // =======================================================================
+      // PWA SETUP: Dynamic Web App Manifest for Phone Install
+      // =======================================================================
+      let deferredInstallPrompt = null;
+      try {
+        const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="42" fill="#070a12"/><circle cx="96" cy="96" r="60" fill="none" stroke="#10b981" stroke-width="10"/><circle cx="96" cy="96" r="22" fill="#10b981"/></svg>`;
+        const iconUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(iconSvg);
+        const manifest = {
+          name: 'Pro Gamer HUD Touch & Joystick Calibrator',
+          short_name: 'HUD Calibrator',
+          description: 'Full-screen touch test, button size calculator, joystick analyzer & HUD overlay tool.',
+          start_url: './',
+          display: 'fullscreen',
+          orientation: 'any',
+          background_color: '#070a12',
+          theme_color: '#070a12',
+          icons: [{ src: iconUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' }]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = URL.createObjectURL(manifestBlob);
+        document.head.appendChild(manifestLink);
+      } catch (e) {}
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btnText = document.getElementById('installAppBtnText');
+        if (btnText) btnText.textContent = 'Install App Now';
+      });
+
+      // =======================================================================
+      // DOM ELEMENTS
+      // =======================================================================
+      const canvas = document.getElementById('touchCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const hudIdle = document.getElementById('hudIdle');
+      const hudRunning = document.getElementById('hudRunning');
+      const screenshotHoldBar = document.getElementById('screenshotHoldBar');
+      const clusterInspectorCard = document.getElementById('clusterInspectorCard');
+      const floatingCompareFab = document.getElementById('floatingCompareFab');
+      const compareToolbar = document.getElementById('compareToolbar');
+      const resultsPanel = document.getElementById('resultsPanel');
+      const installGuideModal = document.getElementById('installGuideModal');
+
+      const modeBtns = document.querySelectorAll('.mode-btn');
+      const modeHintLabel = document.getElementById('modeHintLabel');
+      const durBtns = document.querySelectorAll('.dur-btn');
+      const durationLabel = document.getElementById('durationLabel');
+      const radiusSlider = document.getElementById('radiusSlider');
+      const radiusLabel = document.getElementById('radiusLabel');
+      const soundToggle = document.getElementById('soundToggle');
+      const gridToggle = document.getElementById('gridToggle');
+
+      const startBtn = document.getElementById('startBtn');
+      const downloadHtmlSourceBtn = document.getElementById('downloadHtmlSourceBtn');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      const fullscreenBtnText = document.getElementById('fullscreenBtnText');
+      const installAppBtn = document.getElementById('installAppBtn');
+      const closeInstallModalBtn = document.getElementById('closeInstallModalBtn');
+      const gotItInstallBtn = document.getElementById('gotItInstallBtn');
+
+      const stopCenterBtn = document.getElementById('stopCenterBtn');
+      const timerDisplay = document.getElementById('timerDisplay');
+      const liveTapCount = document.getElementById('liveTapCount');
+
+      // Screenshot Hold Banner buttons
+      const saveTouchPngBtn = document.getElementById('saveTouchPngBtn');
+      const uploadHudFromHoldBtn = document.getElementById('uploadHudFromHoldBtn');
+      const hideHoldUiBtn = document.getElementById('hideHoldUiBtn');
+      const closeHoldToDashboardBtn = document.getElementById('closeHoldToDashboardBtn');
+
+      // Cluster / Joystick Inspector Card elements
+      const inspBadge = document.getElementById('inspBadge');
+      const inspTitle = document.getElementById('inspTitle');
+      const inspCoords = document.getElementById('inspCoords');
+      const inspSizeLabel = document.getElementById('inspSizeLabel');
+      const inspDiameter = document.getElementById('inspDiameter');
+      const inspScaleLabel = document.getElementById('inspScaleLabel');
+      const inspScalePct = document.getElementById('inspScalePct');
+      const inspEdgeNote = document.getElementById('inspEdgeNote');
+      const closeInspectorBtn = document.getElementById('closeInspectorBtn');
+
+      // Overlay Studio & File Upload controls
+      const gameHudInput = document.getElementById('gameHudInput');
+      const touchShotInput = document.getElementById('touchShotInput');
+      const uploadGameHudBtn = document.getElementById('uploadGameHudBtn');
+      const uploadTouchShotBtn = document.getElementById('uploadTouchShotBtn');
+      const gameHudStatus = document.getElementById('gameHudStatus');
+      const touchShotStatus = document.getElementById('touchShotStatus');
+      const lastSavedBadge = document.getElementById('lastSavedBadge');
+      const openCompareStudioBtn = document.getElementById('openCompareStudioBtn');
+      const viewLastReportBtn = document.getElementById('viewLastReportBtn');
+
+      // Compare Floating Icon & Drawer controls
+      const collapseToFabBtn = document.getElementById('collapseToFabBtn');
+      const compareUploadHudBtn = document.getElementById('compareUploadHudBtn');
+      const compareUploadTouchBtn = document.getElementById('compareUploadTouchBtn');
+      const fitModeBtn = document.getElementById('fitModeBtn');
+      const saveMergedPngBtn = document.getElementById('saveMergedPngBtn');
+      const exitCompareBtn = document.getElementById('exitCompareBtn');
+      const hudOpacitySlider = document.getElementById('hudOpacitySlider');
+      const hudOpacityVal = document.getElementById('hudOpacityVal');
+      const touchOpacitySlider = document.getElementById('touchOpacitySlider');
+      const touchOpacityVal = document.getElementById('touchOpacityVal');
+      const showLiveDotsOnCompare = document.getElementById('showLiveDotsOnCompare');
+      const showGhostBtnToggle = document.getElementById('showGhostBtnToggle');
+      const openReportFromCompareBtn = document.getElementById('openReportFromCompareBtn');
+
+      // Report Modal controls
+      const totalTapsBadge = document.getElementById('totalTapsBadge');
+      const winnerHits = document.getElementById('winnerHits');
+      const winnerCoords = document.getElementById('winnerCoords');
+      const winnerPixels = document.getElementById('winnerPixels');
+      const winnerSpread = document.getElementById('winnerSpread');
+      const winnerEdgeHint = document.getElementById('winnerEdgeHint');
+      const joyCountBadge = document.getElementById('joyCountBadge');
+      const joyCenterCoords = document.getElementById('joyCenterCoords');
+      const joyDiameterVal = document.getElementById('joyDiameterVal');
+      const joySprintVal = document.getElementById('joySprintVal');
+      const joyHintText = document.getElementById('joyHintText');
+      const topClustersList = document.getElementById('topClustersList');
+      const closeReportModalBtn = document.getElementById('closeReportModalBtn');
+      const keepTestingBtn = document.getElementById('keepTestingBtn');
+      const exportJsonBtn = document.getElementById('exportJsonBtn');
+      const newSessionBtn = document.getElementById('newSessionBtn');
+      const copyToast = document.getElementById('copyToast');
+
+      // =======================================================================
+      // STATE
+      // =======================================================================
+      // States: 'IDLE' | 'RUNNING' | 'SCREENSHOT_HOLD' | 'COMPARE'
+      let state = 'IDLE';
+      // Modes: 'SPLIT' (Left=Joystick, Right=Buttons) | 'BUTTONS' | 'JOYSTICK'
+      let testMode = 'SPLIT';
+      let selectedDuration = 15;
+      let clusterRadius = 38;
+      let clusters = []; // { id, x, y, count, points: [{x,y,t}], lastTapTime }
+      let selectedCluster = null; // Currently inspected cluster when tapped in post-test/compare mode
+      let totalTaps = 0;
+
+      // Joystick Tracking State
+      // Each drag stroke: { startX, startY, points: [{x,y}], maxDist, avgDist }
+      let joyStrokes = [];
+      let activePointers = new Map(); // pointerId -> { type: 'JOY'|'TAP', startX, startY, points, cluster }
+
+      let timerInterval = null;
+      let endTime = 0;
+      let animFrameId = null;
+      let audioCtx = null;
+
+      // Images & Options for Overlay Comparison Studio
+      let gameHudImage = null;
+      let touchShotImage = null;
+      let hudOpacity = 0.85;
+      let touchOpacity = 0.85;
+      let imageFitMode = 'stretch';
+
+      // Interactive Draggable Ghost Target Button inside Compare Mode
+      let ghostTarget = {
+        x: window.innerWidth * 0.78,
+        y: window.innerHeight * 0.68,
+        radius: 42,
+        dragging: false
+      };
+
+      // =======================================================================
+      // CANVAS SIZING
+      // =======================================================================
+      function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        renderCanvas();
+      }
+      window.addEventListener('resize', resizeCanvas);
+
+      // =======================================================================
+      // AUDIO SYNTHESIS
+      // =======================================================================
+      function playTapBeep(countInCluster) {
+        if (!soundToggle.checked) return;
+        try {
+          if (!audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) audioCtx = new AudioContextClass();
+          }
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+          if (!audioCtx) return;
+
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          const baseFreq = Math.min(320 + countInCluster * 18, 880);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.055);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.06);
+        } catch (e) {}
+      }
+
+      // =======================================================================
+      // SETTINGS CONTROLS & DOWNLOAD HTML SOURCE
+      // =======================================================================
+      modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          testMode = btn.getAttribute('data-mode');
+          modeBtns.forEach(b => {
+            b.className = 'mode-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-slate-500 transition';
+          });
+          btn.className = 'mode-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-emerald-500 bg-emerald-500/20 text-emerald-300 transition';
+
+          if (testMode === 'SPLIT') {
+            modeHintLabel.textContent = 'Left side = Joystick Drag • Right = Button Taps';
+          } else if (testMode === 'BUTTONS') {
+            modeHintLabel.textContent = 'Full Screen = Button Taps & Size %';
+          } else {
+            modeHintLabel.textContent = 'Full Screen = Joystick Thumb Drag & Sprint Ring';
+          }
+          renderCanvas();
+        });
+      });
+
+      durBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedDuration = parseInt(btn.getAttribute('data-dur'), 10);
+          durationLabel.textContent = selectedDuration === 0 ? 'Infinite' : selectedDuration + 's';
+          durBtns.forEach(b => {
+            b.className = 'dur-btn py-1.5 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-slate-500 transition';
+          });
+          btn.className = 'dur-btn py-1.5 text-xs font-semibold rounded-lg border border-emerald-500 bg-emerald-500/20 text-emerald-300 transition';
+        });
+      });
+
+      radiusSlider.addEventListener('input', () => {
+        clusterRadius = parseInt(radiusSlider.value, 10);
+        radiusLabel.textContent = clusterRadius + ' px';
+        renderCanvas();
+      });
+
+      gridToggle.addEventListener('change', () => renderCanvas());
+
+      // Download single-file HTML code directly for GitHub Pages
+      downloadHtmlSourceBtn.addEventListener('click', () => {
+        try {
+          const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+          const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'index.html';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } catch (e) {}
+      });
+
+      fullscreenBtn.addEventListener('click', () => {
+        try {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+            fullscreenBtnText.textContent = 'Exit Fullscreen';
+          } else {
+            document.exitFullscreen().catch(() => {});
+            fullscreenBtnText.textContent = 'Fullscreen';
+          }
+        } catch (e) {}
+      });
+
+      installAppBtn.addEventListener('click', async () => {
+        if (deferredInstallPrompt) {
+          try {
+            deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+          } catch (e) {}
+        } else {
+          installGuideModal.classList.remove('hidden');
+        }
+      });
+
+      closeInstallModalBtn.addEventListener('click', () => installGuideModal.classList.add('hidden'));
+      gotItInstallBtn.addEventListener('click', () => installGuideModal.classList.add('hidden'));
+
+      // =======================================================================
+      // BUTTON SIZE % & JOYSTICK MATH CALCULATORS
+      // =======================================================================
+      // Standard 100% mobile game HUD button is ~50px diameter
+      function getClusterMetrics(cluster) {
+        if (!cluster) return { diameterPx: 50, maxSpreadRadius: 25, scalePct: 100 };
+        let sumSq = 0;
+        let maxDist = 0;
+        for (let i = 0; i < cluster.points.length; i++) {
+          const dx = cluster.points[i].x - cluster.x;
+          const dy = cluster.points[i].y - cluster.y;
+          const d = Math.hypot(dx, dy);
+          sumSq += d * d;
+          if (d > maxDist) maxDist = d;
+        }
+        const rms = cluster.points.length > 1 ? Math.sqrt(sumSq / cluster.points.length) : 10;
+        // Diameter covers scatter + finger pad cushion
+        const diameterPx = Math.round(Math.max(40, Math.min(120, Math.max(maxDist * 2 + 22, rms * 2.5 + 30))));
+        const scalePct = Math.round((diameterPx / 50) * 100);
+        return {
+          diameterPx,
+          outerHitRadius: Math.round(diameterPx / 2),
+          scalePct
+        };
+      }
+
+      function getJoystickMetrics() {
+        if (joyStrokes.length === 0) return null;
+        let sumStartX = 0;
+        let sumStartY = 0;
+        let sumAvgDist = 0;
+        let maxDragReach = 0;
+
+        for (let i = 0; i < joyStrokes.length; i++) {
+          const s = joyStrokes[i];
+          sumStartX += s.startX;
+          sumStartY += s.startY;
+          sumAvgDist += s.avgDist;
+          if (s.maxDist > maxDragReach) maxDragReach = s.maxDist;
+        }
+
+        const n = joyStrokes.length;
+        const centerX = sumStartX / n;
+        const centerY = sumStartY / n;
+        const meanDragRadius = Math.max(28, sumAvgDist / n);
+        const recJoyDiameter = Math.round(Math.max(64, Math.min(180, meanDragRadius * 2)));
+        // Standard 100% joystick in mobile games is ~100px diameter
+        const joyScalePct = Math.round((recJoyDiameter / 100) * 100);
+        const sprintRadius = Math.round(Math.max(meanDragRadius * 1.35, maxDragReach * 0.9));
+
+        return {
+          count: n,
+          centerX,
+          centerY,
+          meanDragRadius: Math.round(meanDragRadius),
+          recJoyDiameter,
+          joyScalePct,
+          sprintRadius
+        };
+      }
+
+      // =======================================================================
+      // RECORDING TAPS, JOYSTICK DRAGS & POST-TEST DOT INSPECTION
+      // =======================================================================
+      function recordTap(x, y) {
+        let nearest = null;
+        let minDist = Infinity;
+
+        for (let i = 0; i < clusters.length; i++) {
+          const c = clusters[i];
+          const dist = Math.hypot(x - c.x, y - c.y);
+          if (dist <= clusterRadius && dist < minDist) {
+            minDist = dist;
+            nearest = c;
+          }
+        }
+
+        const now = performance.now();
+        if (nearest) {
+          nearest.x = (nearest.x * nearest.count + x) / (nearest.count + 1);
+          nearest.y = (nearest.y * nearest.count + y) / (nearest.count + 1);
+          nearest.count += 1;
+          nearest.points.push({ x, y, t: now });
+          nearest.lastTapTime = now;
+          playTapBeep(nearest.count);
+        } else {
+          clusters.push({
+            id: clusters.length + 1,
+            x,
+            y,
+            count: 1,
+            points: [{ x, y, t: now }],
+            lastTapTime: now
+          });
+          playTapBeep(1);
+        }
+
+        totalTaps += 1;
+        liveTapCount.textContent = String(totalTaps);
+      }
+
+      // Inspect a specific tapped dot or joystick ring in SCREENSHOT_HOLD or COMPARE states
+      function inspectSpotAt(x, y) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        // Check if user tapped on a numbered button cluster
+        const sorted = [...clusters].sort((a, b) => b.count - a.count);
+        for (let i = 0; i < sorted.length; i++) {
+          const c = sorted[i];
+          const m = getClusterMetrics(c);
+          if (Math.hypot(x - c.x, y - c.y) <= Math.max(m.outerHitRadius, 28)) {
+            selectedCluster = c;
+            const pctX = ((c.x / w) * 100).toFixed(1);
+            const pctY = ((c.y / h) * 100).toFixed(1);
+            const share = totalTaps ? Math.round((c.count / totalTaps) * 100) : 0;
+            const horizSide = c.x < w / 2 ? 'Left' : 'Right';
+            const horizMargin = c.x < w / 2 ? pctX : (((w - c.x) / w) * 100).toFixed(1);
+            const vertSide = c.y < h / 2 ? 'Top' : 'Bottom';
+            const vertMargin = c.y < h / 2 ? pctY : (((h - c.y) / h) * 100).toFixed(1);
+
+            inspBadge.textContent = `#${i + 1} Button Spot (${c.count} taps · ${share}%)`;
+            inspTitle.textContent = 'Recommended Button Size & Position';
+            inspCoords.textContent = `${pctX}%, ${pctY}%`;
+            inspSizeLabel.textContent = '100% Hit Diameter';
+            inspDiameter.textContent = `${m.diameterPx} px`;
+            inspScaleLabel.textContent = 'In-Game Scale %';
+            inspScalePct.textContent = `${m.scalePct}%`;
+            inspEdgeNote.innerHTML = `Set this button to <strong class="text-emerald-300">${m.scalePct}% scale</strong> at <strong class="text-white">${horizMargin}% from ${horizSide}</strong> & <strong class="text-white">${vertMargin}% from ${vertSide}</strong> to catch 100% of your taps.`;
+            clusterInspectorCard.classList.remove('hidden');
+            renderCanvas();
+            return true;
+          }
+        }
+
+        // Check if user tapped on the Joystick Anchor Ring
+        const jm = getJoystickMetrics();
+        if (jm && Math.hypot(x - jm.centerX, y - jm.centerY) <= jm.sprintRadius) {
+          selectedCluster = 'JOYSTICK';
+          const pctX = ((jm.centerX / w) * 100).toFixed(1);
+          const pctY = ((jm.centerY / h) * 100).toFixed(1);
+          inspBadge.textContent = `Joystick Zone (${jm.count} drags)`;
+          inspTitle.textContent = 'Joystick Center, Size & Sprint Ring';
+          inspCoords.textContent = `${pctX}%, ${pctY}%`;
+          inspSizeLabel.textContent = 'Joystick Diameter';
+          inspDiameter.textContent = `${jm.recJoyDiameter} px`;
+          inspScaleLabel.textContent = 'In-Game Joy Scale';
+          inspScalePct.textContent = `${jm.joyScalePct}%`;
+          inspEdgeNote.innerHTML = `Place your joystick center at <strong class="text-white">${pctX}% X, ${pctY}% Y</strong> with <strong class="text-cyan-300">${jm.joyScalePct}% size</strong> and sprint trigger at <strong class="text-amber-300">${jm.sprintRadius}px</strong>.`;
+          clusterInspectorCard.classList.remove('hidden');
+          renderCanvas();
+          return true;
+        }
+
+        return false;
+      }
+
+      closeInspectorBtn.addEventListener('click', () => {
+        selectedCluster = null;
+        clusterInspectorCard.classList.add('hidden');
+        renderCanvas();
+      });
+
+      // Pointer Down on Canvas
+      canvas.addEventListener('pointerdown', (e) => {
+        const x = e.clientX;
+        const y = e.clientY;
+
+        if (state === 'RUNNING') {
+          e.preventDefault();
+          const isJoystickInput =
+            testMode === 'JOYSTICK' ||
+            (testMode === 'SPLIT' && x < window.innerWidth * 0.46);
+
+          if (isJoystickInput) {
+            activePointers.set(e.pointerId, {
+              type: 'JOY',
+              startX: x,
+              startY: y,
+              points: [{ x, y }],
+              maxDist: 0
+            });
+            playTapBeep(2);
+          } else {
+            recordTap(x, y);
+          }
+          renderCanvas();
+          return;
+        }
+
+        // In COMPARE mode, check if dragging the Ghost Target Ring first
+        if (state === 'COMPARE' && showGhostBtnToggle.checked) {
+          const dist = Math.hypot(x - ghostTarget.x, y - ghostTarget.y);
+          if (dist <= ghostTarget.radius + 20) {
+            ghostTarget.dragging = true;
+            e.preventDefault();
+            return;
+          }
+        }
+
+        // In SCREENSHOT_HOLD or COMPARE mode, tapping a dot or joystick opens the Inspector!
+        if (state === 'SCREENSHOT_HOLD' || state === 'COMPARE') {
+          inspectSpotAt(x, y);
+        }
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (state === 'RUNNING' && activePointers.has(e.pointerId)) {
+          const ptr = activePointers.get(e.pointerId);
+          if (ptr.type === 'JOY') {
+            const x = e.clientX;
+            const y = e.clientY;
+            ptr.points.push({ x, y });
+            const d = Math.hypot(x - ptr.startX, y - ptr.startY);
+            if (d > ptr.maxDist) ptr.maxDist = d;
+            renderCanvas();
+          }
+        } else if (state === 'COMPARE' && ghostTarget.dragging) {
+          ghostTarget.x = Math.max(20, Math.min(window.innerWidth - 20, e.clientX));
+          ghostTarget.y = Math.max(20, Math.min(window.innerHeight - 20, e.clientY));
+          renderCanvas();
+        }
+      });
+
+      function finalizePointer(pointerId) {
+        if (!activePointers.has(pointerId)) return;
+        const ptr = activePointers.get(pointerId);
+        activePointers.delete(pointerId);
+
+        if (ptr.type === 'JOY') {
+          // Calculate average drag distance from start anchor
+          let sumD = 0;
+          for (let i = 0; i < ptr.points.length; i++) {
+            sumD += Math.hypot(ptr.points[i].x - ptr.startX, ptr.points[i].y - ptr.startY);
+          }
+          const avgDist = ptr.points.length > 1 ? sumD / ptr.points.length : 28;
+          joyStrokes.push({
+            startX: ptr.startX,
+            startY: ptr.startY,
+            points: ptr.points,
+            maxDist: Math.max(24, ptr.maxDist),
+            avgDist: Math.max(20, avgDist)
+          });
+          totalTaps += 1;
+          renderCanvas();
+        }
+      }
+
+      window.addEventListener('pointerup', (e) => {
+        finalizePointer(e.pointerId);
+        ghostTarget.dragging = false;
+      });
+
+      window.addEventListener('pointercancel', (e) => {
+        finalizePointer(e.pointerId);
+        ghostTarget.dragging = false;
+      });
+
+      canvas.addEventListener('touchstart', (e) => {
+        if (state === 'RUNNING' || (state === 'COMPARE' && ghostTarget.dragging)) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // =======================================================================
+      // DRAGGABLE FLOATING ICON (FAB) LOGIC (Works in BOTH Post-Test & Overlay!)
+      // =======================================================================
+      let fabDrag = { active: false, moved: false, startX: 0, startY: 0, origLeft: 0, origTop: 0 };
+
+      floatingCompareFab.addEventListener('pointerdown', (e) => {
+        fabDrag.active = true;
+        fabDrag.moved = false;
+        fabDrag.startX = e.clientX;
+        fabDrag.startY = e.clientY;
+        const rect = floatingCompareFab.getBoundingClientRect();
+        fabDrag.origLeft = rect.left;
+        fabDrag.origTop = rect.top;
+        floatingCompareFab.style.transform = 'none';
+        floatingCompareFab.style.left = rect.left + 'px';
+        floatingCompareFab.style.top = rect.top + 'px';
+        e.stopPropagation();
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!fabDrag.active) return;
+        const dx = e.clientX - fabDrag.startX;
+        const dy = e.clientY - fabDrag.startY;
+        if (Math.hypot(dx, dy) > 6) {
+          fabDrag.moved = true;
+        }
+        if (fabDrag.moved) {
+          const newLeft = Math.max(8, Math.min(window.innerWidth - 52, fabDrag.origLeft + dx));
+          const newTop = Math.max(8, Math.min(window.innerHeight - 52, fabDrag.origTop + dy));
+          floatingCompareFab.style.left = newLeft + 'px';
+          floatingCompareFab.style.top = newTop + 'px';
+        }
+      });
+
+      window.addEventListener('pointerup', () => {
+        if (!fabDrag.active) return;
+        fabDrag.active = false;
+        if (!fabDrag.moved) {
+          // Tap on floating icon restores whichever panel matches the current state!
+          floatingCompareFab.classList.add('hidden');
+          if (state === 'SCREENSHOT_HOLD') {
+            screenshotHoldBar.classList.remove('hidden');
+          } else if (state === 'COMPARE') {
+            compareToolbar.classList.remove('hidden');
+          }
+        }
+      });
+
+      // Minimize button in Overlay Studio -> Collapses to Floating Icon
+      collapseToFabBtn.addEventListener('click', () => {
+        compareToolbar.classList.add('hidden');
+        floatingCompareFab.classList.remove('hidden');
+      });
+
+      // Minimize button in Post-Test Screenshot Hold -> Collapses permanently to Floating Icon (No 4s auto-popup!)
+      hideHoldUiBtn.addEventListener('click', () => {
+        screenshotHoldBar.classList.add('hidden');
+        floatingCompareFab.classList.remove('hidden');
+      });
+
+      // =======================================================================
+      // RENDERING ENGINE (Blank Test, Button Size Rings, Joystick Rings & Overlay)
+      // =======================================================================
+      function drawImageLayer(img, alpha) {
+        if (!img) return;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        if (imageFitMode === 'contain') {
+          const scale = Math.min(w / img.width, h / img.height);
+          const dw = img.width * scale;
+          const dh = img.height * scale;
+          const dx = (w - dw) / 2;
+          const dy = (h - dh) / 2;
+          ctx.drawImage(img, dx, dy, dw, dh);
+        } else {
+          ctx.drawImage(img, 0, 0, w, h);
+        }
+        ctx.restore();
+      }
+
+      function renderCanvas() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        ctx.clearRect(0, 0, w, h);
+
+        // 1. In COMPARE mode, draw Game HUD base layer first
+        if (state === 'COMPARE' && gameHudImage) {
+          drawImageLayer(gameHudImage, hudOpacity);
+        }
+
+        // 2. Subtle reference grid & Split-Mode divider line
+        if (gridToggle.checked) {
+          ctx.strokeStyle = (state === 'COMPARE' && gameHudImage)
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(148, 163, 184, 0.05)';
+          ctx.lineWidth = 1;
+          const step = 48;
+          for (let x = step; x < w; x += step) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.stroke();
+          }
+          for (let y = step; y < h; y += step) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+          }
+
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+          ctx.setLineDash([6, 6]);
+          ctx.beginPath();
+          const splitX = testMode === 'SPLIT' ? w * 0.46 : w / 2;
+          ctx.moveTo(splitX, 0);
+          ctx.lineTo(splitX, h);
+          ctx.moveTo(0, h / 2);
+          ctx.lineTo(w, h / 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          if (state === 'RUNNING' && testMode === 'SPLIT') {
+            ctx.fillStyle = 'rgba(148, 163, 184, 0.28)';
+            ctx.font = '600 10px "Inter", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('JOYSTICK DRAG ZONE', 14, 22);
+            ctx.textAlign = 'right';
+            ctx.fillText('BUTTON TAP ZONE', w - 14, 22);
+          }
+        }
+
+        // 3. In COMPARE mode, if user uploaded a Touch Screenshot image, draw it with transparency
+        if (state === 'COMPARE' && touchShotImage) {
+          drawImageLayer(touchShotImage, touchOpacity);
+        }
+
+        const shouldDrawLive =
+          (clusters.length > 0 || joyStrokes.length > 0 || activePointers.size > 0) &&
+          (state !== 'COMPARE' || showLiveDotsOnCompare.checked || !touchShotImage);
+
+        if (shouldDrawLive) {
+          ctx.save();
+          if (state === 'COMPARE') {
+            ctx.globalAlpha = touchOpacity;
+          }
+
+          // -------------------------------------------------------------------
+          // 4A. DRAW JOYSTICK DRAG TRAILS, ANCHOR RING & SPRINT THRESHOLD
+          // -------------------------------------------------------------------
+          // Draw completed joystick strokes
+          for (let i = 0; i < joyStrokes.length; i++) {
+            const s = joyStrokes[i];
+            if (s.points.length > 1) {
+              ctx.beginPath();
+              ctx.moveTo(s.points[0].x, s.points[0].y);
+              for (let j = 1; j < s.points.length; j++) {
+                ctx.lineTo(s.points[j].x, s.points[j].y);
+              }
+              ctx.strokeStyle = 'rgba(34, 211, 238, 0.28)';
+              ctx.lineWidth = 3;
+              ctx.lineCap = 'round';
+              ctx.stroke();
+            }
+            // Start thumb-down anchor dot
+            ctx.beginPath();
+            ctx.arc(s.startX, s.startY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(34, 211, 238, 0.7)';
+            ctx.fill();
+          }
+
+          // Draw currently active live joystick drag
+          activePointers.forEach((ptr) => {
+            if (ptr.type === 'JOY' && ptr.points.length > 0) {
+              const lastPt = ptr.points[ptr.points.length - 1];
+              ctx.beginPath();
+              ctx.arc(ptr.startX, ptr.startY, 38, 0, Math.PI * 2);
+              ctx.strokeStyle = 'rgba(34, 211, 238, 0.5)';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+
+              ctx.beginPath();
+              ctx.moveTo(ptr.startX, ptr.startY);
+              ctx.lineTo(lastPt.x, lastPt.y);
+              ctx.strokeStyle = '#22d3ee';
+              ctx.lineWidth = 3;
+              ctx.stroke();
+
+              ctx.beginPath();
+              ctx.arc(lastPt.x, lastPt.y, 16, 0, Math.PI * 2);
+              ctx.fillStyle = 'rgba(34, 211, 238, 0.45)';
+              ctx.fill();
+              ctx.strokeStyle = '#67e8f9';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+            }
+          });
+
+          // Draw synthesized Joystick Calibration Rings (Ideal Center, Recommended Size, Sprint Reach)
+          const jm = getJoystickMetrics();
+          if (jm) {
+            const isJoySelected = (selectedCluster === 'JOYSTICK');
+            // Outer Sprint Threshold Ring
+            ctx.beginPath();
+            ctx.arc(jm.centerX, jm.centerY, jm.sprintRadius, 0, Math.PI * 2);
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = isJoySelected ? '#facc15' : 'rgba(251, 191, 36, 0.6)';
+            ctx.lineWidth = isJoySelected ? 2.5 : 1.5;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Recommended Joystick Base Ring
+            ctx.beginPath();
+            ctx.arc(jm.centerX, jm.centerY, jm.meanDragRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(6, 182, 212, 0.14)';
+            ctx.fill();
+            ctx.strokeStyle = '#22d3ee';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Joystick Center Knob
+            ctx.beginPath();
+            ctx.arc(jm.centerX, jm.centerY, 14, 0, Math.PI * 2);
+            ctx.fillStyle = '#0891b2';
+            ctx.fill();
+            ctx.strokeStyle = '#a5f3fc';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '700 9px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('JOY', jm.centerX, jm.centerY);
+
+            // Label above Joystick
+            if (state !== 'RUNNING') {
+              const jTag = `JOYSTICK: ${jm.recJoyDiameter}px (${jm.joyScalePct}% Scale)`;
+              ctx.font = '700 10px "Inter", sans-serif';
+              const tw = ctx.measureText(jTag).width;
+              const px = Math.max(6, Math.min(w - tw - 18, jm.centerX - tw / 2 - 7));
+              const py = Math.max(8, jm.centerY - jm.sprintRadius - 24);
+
+              ctx.fillStyle = 'rgba(8, 51, 68, 0.92)';
+              ctx.beginPath();
+              ctx.roundRect(px, py, tw + 14, 19, 5);
+              ctx.fill();
+              ctx.strokeStyle = '#22d3ee';
+              ctx.lineWidth = 1;
+              ctx.stroke();
+
+              ctx.fillStyle = '#67e8f9';
+              ctx.fillText(jTag, px + (tw + 14) / 2, py + 9.5);
+            }
+          }
+
+          // -------------------------------------------------------------------
+          // 4B. DRAW NUMBERED BUTTON CLUSTERS & 100% HIT BUTTON SIZE RINGS
+          // -------------------------------------------------------------------
+          if (clusters.length > 0) {
+            const sorted = [...clusters].sort((a, b) => b.count - a.count);
+            const maxCount = sorted[0].count;
+            const now = performance.now();
+            const showWinnerBadges = (state === 'SCREENSHOT_HOLD' || state === 'COMPARE' || !resultsPanel.classList.contains('hidden'));
+
+            // Pass 1: Outer "100% Hit Button Size Ring" & raw micro-taps
+            for (let i = 0; i < clusters.length; i++) {
+              const c = clusters[i];
+              const isWinner = (showWinnerBadges && c === sorted[0]);
+              const isSelected = (selectedCluster === c);
+              const metrics = getClusterMetrics(c);
+
+              ctx.beginPath();
+              ctx.arc(c.x, c.y, metrics.outerHitRadius, 0, Math.PI * 2);
+              if (isSelected) {
+                ctx.fillStyle = 'rgba(250, 204, 21, 0.20)';
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = 2.5;
+              } else if (isWinner) {
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.16)';
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.85)';
+                ctx.lineWidth = 2.2;
+              } else {
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.06)';
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.24)';
+                ctx.lineWidth = 1.2;
+              }
+              ctx.fill();
+              ctx.stroke();
+
+              // Raw micro-tap points inside cluster
+              ctx.fillStyle = isWinner ? 'rgba(52, 211, 153, 0.6)' : 'rgba(148, 163, 184, 0.38)';
+              for (let j = 0; j < c.points.length; j++) {
+                const pt = c.points[j];
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+
+            // Pass 2: Numbered Center Dots & Button Size % Labels
+            for (let i = 0; i < clusters.length; i++) {
+              const c = clusters[i];
+              const isTop1 = (c === sorted[0]);
+              const isTop2 = (sorted.length > 1 && c === sorted[1]);
+              const ratio = maxCount > 1 ? (c.count / maxCount) : 1;
+              const metrics = getClusterMetrics(c);
+
+              const dotRadius = Math.min(14 + Math.sqrt(c.count) * 3.2, 32);
+
+              const age = now - c.lastTapTime;
+              if (state === 'RUNNING' && age < 260) {
+                const rippleProgress = age / 260;
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, dotRadius + rippleProgress * 22, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(52, 211, 153, ${1 - rippleProgress})`;
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+              }
+
+              let fillColor = '#0284c7';
+              let borderColor = '#7dd3fc';
+              if (showWinnerBadges && isTop1) {
+                fillColor = '#10b981';
+                borderColor = '#a7f3d0';
+              } else if (ratio >= 0.75 && c.count > 1) {
+                fillColor = '#f59e0b';
+                borderColor = '#fde68a';
+              } else if (ratio >= 0.4 && c.count > 1) {
+                fillColor = '#6366f1';
+                borderColor = '#c7d2fe';
+              }
+
+              ctx.beginPath();
+              ctx.arc(c.x, c.y, dotRadius, 0, Math.PI * 2);
+              ctx.fillStyle = fillColor;
+              ctx.fill();
+              ctx.lineWidth = (showWinnerBadges && isTop1) ? 3 : 2;
+              ctx.strokeStyle = borderColor;
+              ctx.stroke();
+
+              // Number of taps inside dot
+              ctx.fillStyle = '#ffffff';
+              ctx.font = `700 ${dotRadius > 22 ? 14 : 12}px "JetBrains Mono", monospace`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(String(c.count), c.x, c.y);
+
+              // In post-test or compare mode, display Button Size % & Rank badge above Top 1 & Top 2
+              if (showWinnerBadges && (isTop1 || isTop2)) {
+                const tag = isTop1
+                  ? `★ #1 BTN: ${metrics.diameterPx}px (${metrics.scalePct}% Scale)`
+                  : `#2 BTN: ${metrics.diameterPx}px (${metrics.scalePct}%)`;
+                ctx.font = '700 10.5px "Inter", sans-serif';
+                const textWidth = ctx.measureText(tag).width;
+                const pillX = Math.max(6, Math.min(w - textWidth - 22, c.x - textWidth / 2 - 8));
+                const pillY = Math.max(8, c.y - metrics.outerHitRadius - 24);
+
+                ctx.fillStyle = isTop1 ? 'rgba(6, 78, 59, 0.94)' : 'rgba(30, 41, 59, 0.94)';
+                ctx.beginPath();
+                ctx.roundRect(pillX, pillY, textWidth + 16, 20, 6);
+                ctx.fill();
+                ctx.strokeStyle = isTop1 ? '#34d399' : '#94a3b8';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.fillStyle = isTop1 ? '#6ee7b7' : '#e2e8f0';
+                ctx.fillText(tag, pillX + (textWidth + 16) / 2, pillY + 10);
+              }
+            }
+          }
+
+          ctx.restore();
+        }
+
+        // 5. In COMPARE mode, draw the Draggable Target Ring so user can align & read exact % coordinates
+        if (state === 'COMPARE' && showGhostBtnToggle.checked) {
+          ctx.save();
+          const gx = ghostTarget.x;
+          const gy = ghostTarget.y;
+          const gr = ghostTarget.radius;
+
+          ctx.beginPath();
+          ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(245, 158, 11, 0.16)';
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([6, 4]);
+          ctx.strokeStyle = '#fbbf24';
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.beginPath();
+          ctx.moveTo(gx - 10, gy);
+          ctx.lineTo(gx + 10, gy);
+          ctx.moveTo(gx, gy - 10);
+          ctx.lineTo(gx, gy + 10);
+          ctx.strokeStyle = '#fde68a';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          const gPctX = ((gx / w) * 100).toFixed(1);
+          const gPctY = ((gy / h) * 100).toFixed(1);
+          const gScale = Math.round(((gr * 2) / 50) * 100);
+          const label = `DRAG TARGET: ${gPctX}%, ${gPctY}% (${gScale}% Scale)`;
+          ctx.font = '700 10px "JetBrains Mono", monospace';
+          const tw = ctx.measureText(label).width;
+          const lx = Math.max(6, Math.min(w - tw - 16, gx - tw / 2 - 6));
+          const ly = Math.min(h - 26, gy + gr + 6);
+
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+          ctx.beginPath();
+          ctx.roundRect(lx, ly, tw + 12, 18, 5);
+          ctx.fill();
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.fillStyle = '#fde68a';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, lx + (tw + 12) / 2, ly + 9);
+          ctx.restore();
+        }
+      }
+
+      function startAnimLoop() {
+        if (animFrameId) cancelAnimationFrame(animFrameId);
+        function step() {
+          if (state === 'RUNNING') {
+            renderCanvas();
+            animFrameId = requestAnimationFrame(step);
+          }
+        }
+        animFrameId = requestAnimationFrame(step);
+      }
+
+      // =======================================================================
+      // SESSION LIFECYCLE: Start -> Minimalist Test -> Screenshot Freeze Hold
+      // =======================================================================
+      function startSession(resetExisting) {
+        if (resetExisting) {
+          clusters = [];
+          joyStrokes = [];
+          activePointers.clear();
+          selectedCluster = null;
+          totalTaps = 0;
+          liveTapCount.textContent = '0';
+        }
+        state = 'RUNNING';
+        hudIdle.classList.add('hidden');
+        resultsPanel.classList.add('hidden');
+        screenshotHoldBar.classList.add('hidden');
+        clusterInspectorCard.classList.add('hidden');
+        compareToolbar.classList.add('hidden');
+        floatingCompareFab.classList.add('hidden');
+
+        hudRunning.classList.remove('hidden');
+        hudRunning.classList.add('flex');
+
+        if (timerInterval) clearInterval(timerInterval);
+
+        if (selectedDuration > 0) {
+          endTime = performance.now() + selectedDuration * 1000;
+          timerDisplay.textContent = selectedDuration + 's';
+          timerInterval = setInterval(() => {
+            const remaining = Math.max(0, (endTime - performance.now()) / 1000);
+            timerDisplay.textContent = Math.ceil(remaining) + 's';
+            if (remaining <= 0) {
+              finishSession();
+            }
+          }, 100);
+        } else {
+          timerDisplay.textContent = '∞';
+        }
+
+        renderCanvas();
+        startAnimLoop();
+      }
+
+      function finishSession() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        if (animFrameId) {
+          cancelAnimationFrame(animFrameId);
+          animFrameId = null;
+        }
+        activePointers.clear();
+
+        state = 'SCREENSHOT_HOLD';
+        hudRunning.classList.add('hidden');
+        hudRunning.classList.remove('flex');
+        floatingCompareFab.classList.add('hidden');
+        compareToolbar.classList.add('hidden');
+
+        populateStatsReport();
+
+        // Snap the draggable target ring to the #1 most tapped spot automatically
+        if (clusters.length > 0) {
+          const sorted = [...clusters].sort((a, b) => b.count - a.count);
+          const m = getClusterMetrics(sorted[0]);
+          ghostTarget.x = sorted[0].x;
+          ghostTarget.y = sorted[0].y;
+          ghostTarget.radius = m.outerHitRadius;
+        }
+
+        // Auto-capture current touch canvas as an image so user can overlay it immediately
+        try {
+          renderCanvas();
+          const dataUrl = canvas.toDataURL('image/png');
+          const snapImg = new Image();
+          snapImg.onload = () => {
+            touchShotImage = snapImg;
+            touchShotStatus.textContent = `Auto-captured (${clusters.length} zones, ${joyStrokes.length} joy)`;
+          };
+          snapImg.src = dataUrl;
+        } catch (e) {}
+
+        lastSavedBadge.textContent = `${totalTaps} actions recorded`;
+        lastSavedBadge.className = 'text-[10px] mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        viewLastReportBtn.classList.remove('hidden');
+
+        screenshotHoldBar.classList.remove('hidden');
+        renderCanvas();
+      }
+
+      function populateStatsReport() {
+        totalTapsBadge.textContent = `${totalTaps} Action${totalTaps === 1 ? '' : 's'}`;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        // 1. Populate Button Clusters Section
+        if (clusters.length === 0) {
+          winnerHits.textContent = '0 hits (0%)';
+          winnerCoords.textContent = '--%, --%';
+          winnerPixels.textContent = '-- px';
+          winnerSpread.textContent = '-- px (--%)';
+          winnerEdgeHint.textContent = 'No button taps recorded in this session.';
+          topClustersList.innerHTML = '<div class="text-slate-500 italic py-2">No button tap clusters recorded yet.</div>';
+        } else {
+          const sorted = [...clusters].sort((a, b) => b.count - a.count);
+          const best = sorted[0];
+          const pctX = ((best.x / w) * 100).toFixed(1);
+          const pctY = ((best.y / h) * 100).toFixed(1);
+          const tapSum = clusters.reduce((acc, c) => acc + c.count, 0);
+          const sharePct = tapSum ? Math.round((best.count / tapSum) * 100) : 0;
+          const m = getClusterMetrics(best);
+
+          winnerHits.textContent = `${best.count} hits (${sharePct}%)`;
+          winnerCoords.textContent = `${pctX}%, ${pctY}%`;
+          winnerPixels.textContent = `${Math.round(best.x)}, ${Math.round(best.y)}`;
+          winnerSpread.textContent = `${m.diameterPx}px (${m.scalePct}%)`;
+
+          const horizSide = best.x < w / 2 ? 'Left' : 'Right';
+          const horizMarginPct = best.x < w / 2 ? pctX : (((w - best.x) / w) * 100).toFixed(1);
+          const vertSide = best.y < h / 2 ? 'Top' : 'Bottom';
+          const vertMarginPct = best.y < h / 2 ? pctY : (((h - best.y) / h) * 100).toFixed(1);
+
+          winnerEdgeHint.innerHTML = `Set primary button to <strong class="text-emerald-300">${m.scalePct}% scale (${m.diameterPx}px)</strong> at <strong class="text-white">${horizMarginPct}% from ${horizSide}</strong> & <strong class="text-white">${vertMarginPct}% from ${vertSide}</strong>.`;
+
+          const topSlice = sorted.slice(0, 4);
+          topClustersList.innerHTML = topSlice.map((c, idx) => {
+            const cxPct = ((c.x / w) * 100).toFixed(1);
+            const cyPct = ((c.y / h) * 100).toFixed(1);
+            const cm = getClusterMetrics(c);
+            const badgeColors = [
+              'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+              'bg-amber-500/20 text-amber-300 border-amber-500/40',
+              'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
+              'bg-sky-500/20 text-sky-300 border-sky-500/40'
+            ];
+            return `
+              <div class="flex items-center justify-between bg-slate-950/70 px-3 py-2 rounded-lg border border-slate-800">
+                <div class="flex items-center gap-2">
+                  <span class="mono text-[11px] font-bold px-2 py-0.5 rounded border ${badgeColors[idx]}">#${idx + 1}</span>
+                  <div>
+                    <div class="font-semibold text-slate-200">X: ${cxPct}% · Y: ${cyPct}%</div>
+                    <div class="text-[10px] text-cyan-300">Rec. Size: ${cm.diameterPx}px (Scale: ~${cm.scalePct}%)</div>
+                  </div>
+                </div>
+                <div class="mono font-bold text-slate-200">${c.count} taps</div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // 2. Populate Joystick Movement Section
+        const jm = getJoystickMetrics();
+        if (!jm) {
+          joyCountBadge.textContent = '0 drags';
+          joyCenterCoords.textContent = '--%, --%';
+          joyDiameterVal.textContent = '-- px (--%)';
+          joySprintVal.textContent = '-- px';
+          joyHintText.textContent = 'Drag your left thumb during Split or Joystick mode to calculate your ideal joystick center, size %, and sprint reach.';
+        } else {
+          const jxPct = ((jm.centerX / w) * 100).toFixed(1);
+          const jyPct = ((jm.centerY / h) * 100).toFixed(1);
+          joyCountBadge.textContent = `${jm.count} drag${jm.count === 1 ? '' : 's'}`;
+          joyCenterCoords.textContent = `${jxPct}%, ${jyPct}%`;
+          joyDiameterVal.textContent = `${jm.recJoyDiameter}px (${jm.joyScalePct}%)`;
+          joySprintVal.textContent = `${jm.sprintRadius} px`;
+          joyHintText.innerHTML = `Place your Joystick at <strong class="text-white">${jxPct}% from Left, ${(100 - Number(jyPct)).toFixed(1)}% from Bottom</strong> with <strong class="text-cyan-300">${jm.joyScalePct}% scale</strong>.`;
+        }
+      }
+
+      function downloadCanvasPng(filenamePrefix) {
+        renderCanvas();
+        try {
+          const link = document.createElement('a');
+          link.download = `${filenamePrefix}-${Date.now()}.png`;
+          link.href = canvas.toDataURL('image/png');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } catch (e) {}
+      }
+
+      // =======================================================================
+      // SCREENSHOT HOLD BAR ACTIONS
+      // =======================================================================
+      saveTouchPngBtn.addEventListener('click', () => {
+        downloadCanvasPng('touch-heatmap-screenshot');
+      });
+
+      uploadHudFromHoldBtn.addEventListener('click', () => {
+        openCompareStudio(true);
+        if (!gameHudImage) {
+          gameHudInput.click();
+        }
+      });
+
+      closeHoldToDashboardBtn.addEventListener('click', () => {
+        state = 'IDLE';
+        screenshotHoldBar.classList.add('hidden');
+        clusterInspectorCard.classList.add('hidden');
+        floatingCompareFab.classList.add('hidden');
+        hudIdle.classList.remove('hidden');
+        renderCanvas();
+      });
+
+      // =======================================================================
+      // OVERLAY COMPARISON STUDIO
+      // =======================================================================
+      function openCompareStudio(collapseToFloatingIcon) {
+        state = 'COMPARE';
+        hudIdle.classList.add('hidden');
+        screenshotHoldBar.classList.add('hidden');
+        resultsPanel.classList.add('hidden');
+
+        if (collapseToFloatingIcon) {
+          compareToolbar.classList.add('hidden');
+          floatingCompareFab.classList.remove('hidden');
+        } else {
+          floatingCompareFab.classList.add('hidden');
+          compareToolbar.classList.remove('hidden');
+        }
+        renderCanvas();
+      }
+
+      openCompareStudioBtn.addEventListener('click', () => openCompareStudio(true));
+
+      exitCompareBtn.addEventListener('click', () => {
+        state = 'IDLE';
+        compareToolbar.classList.add('hidden');
+        floatingCompareFab.classList.add('hidden');
+        clusterInspectorCard.classList.add('hidden');
+        hudIdle.classList.remove('hidden');
+        renderCanvas();
+      });
+
+      uploadGameHudBtn.addEventListener('click', () => gameHudInput.click());
+      compareUploadHudBtn.addEventListener('click', () => gameHudInput.click());
+
+      uploadTouchShotBtn.addEventListener('click', () => touchShotInput.click());
+      compareUploadTouchBtn.addEventListener('click', () => touchShotInput.click());
+
+      gameHudInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            gameHudImage = img;
+            gameHudStatus.textContent = `Loaded: ${file.name}`;
+            gameHudStatus.className = 'text-[10px] text-emerald-400 truncate font-medium';
+            openCompareStudio(true);
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      touchShotInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            touchShotImage = img;
+            touchShotStatus.textContent = `Loaded: ${file.name}`;
+            touchShotStatus.className = 'text-[10px] text-purple-300 truncate font-medium';
+            openCompareStudio(true);
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      fitModeBtn.addEventListener('click', () => {
+        imageFitMode = imageFitMode === 'stretch' ? 'contain' : 'stretch';
+        fitModeBtn.textContent = imageFitMode === 'stretch' ? 'Fit: Stretch' : 'Fit: Original';
+        renderCanvas();
+      });
+
+      hudOpacitySlider.addEventListener('input', () => {
+        hudOpacity = parseInt(hudOpacitySlider.value, 10) / 100;
+        hudOpacityVal.textContent = hudOpacitySlider.value + '%';
+        renderCanvas();
+      });
+
+      touchOpacitySlider.addEventListener('input', () => {
+        touchOpacity = parseInt(touchOpacitySlider.value, 10) / 100;
+        touchOpacityVal.textContent = touchOpacitySlider.value + '%';
+        renderCanvas();
+      });
+
+      showLiveDotsOnCompare.addEventListener('change', () => renderCanvas());
+      showGhostBtnToggle.addEventListener('change', () => renderCanvas());
+
+      saveMergedPngBtn.addEventListener('click', () => {
+        downloadCanvasPng('hud-overlay-comparison');
+      });
+
+      openReportFromCompareBtn.addEventListener('click', () => {
+        populateStatsReport();
+        resultsPanel.classList.remove('hidden');
+      });
+
+      // =======================================================================
+      // MAIN BUTTONS & REPORT MODAL WIRING
+      // =======================================================================
+      startBtn.addEventListener('click', () => startSession(true));
+      stopCenterBtn.addEventListener('click', () => finishSession());
+
+      viewLastReportBtn.addEventListener('click', () => {
+        populateStatsReport();
+        resultsPanel.classList.remove('hidden');
+      });
+
+      closeReportModalBtn.addEventListener('click', () => {
+        resultsPanel.classList.add('hidden');
+      });
+
+      keepTestingBtn.addEventListener('click', () => startSession(false));
+
+      newSessionBtn.addEventListener('click', () => {
+        state = 'IDLE';
+        resultsPanel.classList.add('hidden');
+        screenshotHoldBar.classList.add('hidden');
+        clusterInspectorCard.classList.add('hidden');
+        compareToolbar.classList.add('hidden');
+        floatingCompareFab.classList.add('hidden');
+        hudIdle.classList.remove('hidden');
+        renderCanvas();
+      });
+
+      exportJsonBtn.addEventListener('click', () => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const sorted = [...clusters].sort((a, b) => b.count - a.count);
+        const jm = getJoystickMetrics();
+        const payload = {
+          screenResolution: `${w}x${h}`,
+          testMode,
+          totalActions: totalTaps,
+          joystickCalibration: jm ? {
+            dragsRecorded: jm.count,
+            centerXPercent: Number(((jm.centerX / w) * 100).toFixed(1)),
+            centerYPercent: Number(((jm.centerY / h) * 100).toFixed(1)),
+            recommendedDiameterPx: jm.recJoyDiameter,
+            recommendedInGameScalePercent: jm.joyScalePct,
+            sprintThresholdRadiusPx: jm.sprintRadius
+          } : null,
+          recommendedButtonZones: sorted.slice(0, 5).map((c, i) => {
+            const m = getClusterMetrics(c);
+            return {
+              rank: i + 1,
+              taps: c.count,
+              xPx: Math.round(c.x),
+              yPx: Math.round(c.y),
+              xPercent: Number(((c.x / w) * 100).toFixed(1)),
+              yPercent: Number(((c.y / h) * 100).toFixed(1)),
+              recommendedButtonDiameterPx: m.diameterPx,
+              recommendedInGameScalePercent: m.scalePct
+            };
+          })
+        };
+        const text = JSON.stringify(payload, null, 2);
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(() => {});
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          copyToast.classList.remove('hidden');
+        } catch (e) {}
+      });
+
+      // Initial sizing
+      resizeCanvas();
+    })();
+  </script>
+</body>
+</html>
